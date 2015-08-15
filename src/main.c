@@ -3,28 +3,28 @@
 static Window *s_main_window;
 static TextLayer *s_time_layer;
 static TextLayer *s_factors_layer;
-int primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47 };
-int factors[12];
-int factor_count = 0;
 
-int (*factorise( int number )){
+void factorise(int number, int *factors, int *factor_count){
+	int primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47 };
 	if( number == 1 || number == 0 ) {
 		// Reached a prime within the search space
-		return factors;
+		return;
 	}
-	int length = sizeof(primes) / sizeof(int);
-	for(int i = 0; i < length; i++) {
+	for(int i = 0; i < 15; i++) {
 		int prime = primes[i];
 		if( number%prime == 0 ) {
-			factors[factor_count++] = prime;
+			factors[*factor_count] = prime;
+            *factor_count = *factor_count + 1;
 			number = number / prime;
-			return factorise( number );
+			factorise(number, factors, factor_count);
+            return;
 		}
 	}
 	
 	// Reached a prime not within the search space
-	factors[factor_count++] = number;
-	return factors;
+	factors[*factor_count] = number;
+	*factor_count = *factor_count + 1;
+	return;
 }
 
 static void main_window_load(Window *window) {
@@ -32,7 +32,6 @@ static void main_window_load(Window *window) {
 	s_time_layer = text_layer_create(GRect(0, 40, 144, 50));
 	text_layer_set_background_color(s_time_layer, GColorClear);
 	text_layer_set_text_color(s_time_layer, GColorWhite);
-	text_layer_set_text(s_time_layer, "00:00");
 
 	// Improve the layout to be more like a watchface
 	text_layer_set_font(s_time_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
@@ -45,7 +44,6 @@ static void main_window_load(Window *window) {
 	s_factors_layer = text_layer_create(GRect(0, 90, 144, 60));
 	text_layer_set_background_color( s_factors_layer, GColorClear);
 	text_layer_set_text_color( s_factors_layer, GColorWhite);
-	text_layer_set_text( s_factors_layer, "2x3x5");
 	
 	// Improve the layout to be more like a watchface
 	text_layer_set_font( s_factors_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28));
@@ -63,8 +61,8 @@ static void update_time() {
 
 	// Create a long-lived buffer
 	static char buffer[] = "00:00";
-	static char buffer_int[] = "0000";
 	static char text[20];
+	char buffer_int[] = "0000";
 
 	// Write the current hours and minutes into the buffer
 	if(clock_is_24h_style() == true) {
@@ -81,28 +79,25 @@ static void update_time() {
 	text_layer_set_text(s_time_layer, buffer);
 	
 	int number = atoi(buffer_int);
-	int *factored = factorise(number);
+	int factors[12];
+	int factor_count = 0;
+	factorise(number, factors, &factor_count);
 	strcpy( text, "" );
-	if( factored[1] == (char)0 ) {
+	if( factor_count == 1 ) {
 		if( number == 1 || number == 0 ) {
 			strcpy( text, "It's complicated" );
 		} else {
 			strcpy( text, "Prime" );
 		}
 	} else {
-		for( int i = 0; i < 12; i++ ){
-			if( factored[i] == (char)0 ) break;
+		for( int i = 0; i < factor_count; i++ ){
 			char factor[100];
-			snprintf(factor, sizeof("99999") , "%d", factored[i] );
+			snprintf(factor, sizeof("99999") , "%d", factors[i] );
 			if( i > 0 ) strcat(text, "x");
 			strcat(text, factor);
 		}
 	}
 	text_layer_set_text(s_factors_layer, text);
-	for( int i = 0; i < 12; i++ ){
-		factors[i] = 0;
-	}
-	factor_count = 0;
 }
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
@@ -111,6 +106,7 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void main_window_unload(Window *window) {
 	text_layer_destroy(s_time_layer);
+	text_layer_destroy(s_factors_layer);
 }
 
 void handle_init(void) {
@@ -129,7 +125,6 @@ void handle_init(void) {
 	
 	// Show the Window on the watch, with animated=true
 	window_stack_push(s_main_window, true);
-	update_time();
 }
 
 void handle_deinit(void) {
