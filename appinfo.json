@@ -1,0 +1,23 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "harryaburt@gmail.com",
+    "longName": "Factorise",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "Factorise",
+    "targetPlatforms": [
+        "aplite",
+        "basalt"
+    ],
+    "uuid": "21a4947a-aff0-4fc6-ad3b-d5a2b64f00f4",
+    "versionLabel": "1.1",
+    "watchapp": {
+        "watchface": true
+    }
+}
